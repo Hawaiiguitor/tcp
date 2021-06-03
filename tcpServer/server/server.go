@@ -14,22 +14,23 @@ func NewServer() *server {
 }
 
 func (srv *server) ListenAndServer(port string) error {
-    addr := ":" + port
+    addr := "0.0.0.0" + ":" + port
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
         fmt.Printf("Fail to listening, err: %v\n", err)
 		return err
 	}
+	fmt.Printf("server listening on: %s\n", addr)
     for {
 		rw, err := ln.Accept()
 		if err != nil {
 			fmt.Printf("Fail to accept incoming conn, err: %v\n", err)
 			continue
 		}
-		go handerConn(&rw)
+		go handerConn(rw)
 	}
 }
 
-func handerConn(rw *net.Conn) {
-    defer rw.close()
+func handerConn(rw net.Conn) {
+    defer rw.Close()
 }
