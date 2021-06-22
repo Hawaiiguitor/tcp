@@ -1,0 +1,3 @@
+# Untrack folders
+tcpClient/tmp.log
+tcpServer/tmp.log

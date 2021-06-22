@@ -9,7 +9,7 @@ import (
 func main() {
 	c := client.NewClient()
 	c.Connect("localhost", "9191")
-	c.Send("test\n")
+	c.Sendfile("./tmp.log")
 
 	for {
 		time.Sleep(1 * time.Second)

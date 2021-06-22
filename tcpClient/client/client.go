@@ -4,7 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"net"
+	"os"
+
+	"github.com/Hawaiiguitor/tcp/message"
 )
 
 type client struct {
@@ -24,8 +28,29 @@ func (c *client) Connect(ip, port string) {
 	c.conn = conn
 }
 
-func (c *client) Send(data string) {
-	_, err := c.conn.Write([]byte(data))
+func (c *client) Sendfile(fname string) {
+	fd, err := os.Open(fname)
+	if err != nil {
+		log.Fatalf("Fail to open file %s", fname)
+	}
+	f_info, err := fd.Stat()
+	if err != nil {
+		log.Fatalf("Fail to get fileinfo of  %s", fname)
+	}
+
+	// Send fileinfo
+	msg := &message.TcpMsg{}
+	msg.Header = message.MsgHeader{
+		DataSize: len(f_info.Name()),
+		OpCode:   message.OP_SENDINFO,
+	}
+	msg.Body = []byte(f_info.Name())
+	data, err := message.ConstructMsg(msg)
+	if err != nil {
+		log.Fatalf("Fail to construct message")
+	}
+
+	_, err = c.conn.Write([]byte(data))
 	if err != nil {
 		fmt.Printf("Fail to send data, err: %v", err)
 		return
