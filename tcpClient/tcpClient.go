@@ -1,17 +1,20 @@
 package main
 
 import (
-	"time"
+	"fmt"
 
 	"github.com/Hawaiiguitor/tcp/tcpClient/client"
 )
 
 func main() {
 	c := client.NewClient()
-	c.Connect("localhost", "9191")
-	c.Sendfile("./tmp.log")
-
-	for {
-		time.Sleep(1 * time.Second)
+	err := c.Connect("localhost", "9191")
+	if err != nil {
+		return
 	}
+	err = c.Sendfile("./test")
+	if err != nil {
+		fmt.Print("tcp client failed to send file\n")
+	}
+	c.Close()
 }

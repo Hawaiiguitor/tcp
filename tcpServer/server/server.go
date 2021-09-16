@@ -41,42 +41,70 @@ func handerConn(conn net.Conn) {
 	rd := bufio.NewReader(conn)
 	wd := bufio.NewWriter(conn)
 	rw := bufio.NewReadWriter(rd, wd)
-	for {
-		hd, _, err := rw.ReadLine()
-		if err != nil {
-			if err == io.EOF {
-				return
-			}
-			fmt.Printf("Fail to read data, err: %v", err)
-		}
 
-		header, err := message.DecodeHeader(hd)
-		datasize := header.DataSize
-		if datasize > message.MAX_NET_DATA_SIZE {
-			rw.Write([]byte("Deny"))
-			break
+	hd, _, err := rw.ReadLine()
+	if err != nil {
+		if err == io.EOF {
+			return
 		}
-		if header.OpCode == message.OP_SENDINFO {
-			buf := make([]byte, datasize)
-			_, err := io.ReadFull(rw, buf)
-			if err != nil {
-				log.Fatalf("SendInfo: Fail to read body, %v", err)
-			}
-			fname := string(buf)
-			fd, err := os.Create(fname)
-			if err != nil {
-				log.Fatal("Fail to create file")
-			}
-			fmt.Printf("Create file: %s\n", fd.Name())
-			defer fd.Close()
-
-			_, err = conn.Write([]byte("Access"))
-			if err != nil {
-				fmt.Printf("Send data failure, err: %v", err)
-				return
-			}
-		}
-
-		break
+		fmt.Printf("Fail to read data, err: %v", err)
 	}
+
+	header, err := message.DecodeHeader(hd)
+	datasize := header.DataSize
+	if datasize > message.MAX_NET_DATA_SIZE {
+		rw.Write([]byte("Deny"))
+		return
+	}
+
+	var fname string
+	if header.OpCode == message.OP_SENDINFO {
+		buf := make([]byte, datasize)
+		_, err := io.ReadFull(rw, buf)
+		if err != nil {
+			log.Fatalf("SendInfo: Fail to read body, %v", err)
+		}
+		fname = string(buf)
+		fd, err := os.Create(fname)
+		if err != nil {
+			log.Fatal("Fail to create file")
+		}
+		fmt.Printf("Create file: %s\n", fd.Name())
+
+		_, err = conn.Write([]byte("Access\n"))
+		if err != nil {
+			fmt.Printf("Send data failure, err: %v", err)
+			return
+		}
+		fd.Close()
+	} else {
+		fmt.Printf("Missing file info from client, interrupt this connection\n")
+		_, err = conn.Write([]byte("Access\n"))
+		if err != nil {
+			fmt.Printf("Send data failure, err: %v", err)
+		}
+		return
+	}
+
+	buf := make([]byte, 1024)
+	for datasize > 0 {
+		n, err := rw.Read(buf)
+		if err != nil && err != io.EOF {
+			fmt.Printf("Fail to read data, err: %v, n: %d", err, n)
+			return
+		}
+		fmt.Printf("len: %d, fname: %s \n", len(buf[0:n]), fname)
+		f, err := os.OpenFile(fname, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+		if err != nil {
+			fmt.Printf("Fail to open file, err: %v", err)
+			return
+		}
+		_, err = f.Write(buf[0 : n+1])
+		if err != nil {
+			fmt.Printf("Fail to write data, err: %v", err)
+			return
+		}
+		datasize -= n
+	}
+
 }
