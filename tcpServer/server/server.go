@@ -53,7 +53,7 @@ func handerConn(conn net.Conn) {
 	header, err := message.DecodeHeader(hd)
 	datasize := header.DataSize
 	if datasize > message.MAX_NET_DATA_SIZE {
-		rw.Write([]byte("Deny"))
+		rw.Write([]byte("Deny\n"))
 		return
 	}
 
@@ -79,7 +79,7 @@ func handerConn(conn net.Conn) {
 		fd.Close()
 	} else {
 		fmt.Printf("Missing file info from client, interrupt this connection\n")
-		_, err = conn.Write([]byte("Access\n"))
+		_, err = conn.Write([]byte("Deny\n"))
 		if err != nil {
 			fmt.Printf("Send data failure, err: %v", err)
 		}
