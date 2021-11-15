@@ -12,9 +12,11 @@ func main() {
 	if err != nil {
 		return
 	}
+	defer c.Close()
 	err = c.Sendfile("./test")
 	if err != nil {
 		fmt.Print("tcp client failed to send file\n")
 	}
-	c.Close()
+	// time.Sleep(10 * time.Second)
+
 }

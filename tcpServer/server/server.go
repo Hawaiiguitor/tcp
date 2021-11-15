@@ -12,10 +12,16 @@ import (
 )
 
 type server struct {
+	ln   net.Listener
+	quit chan interface{}
 }
 
 func NewServer() *server {
 	return &server{}
+}
+
+func (srv *server) Stop() {
+	srv.ln.Close()
 }
 
 func (srv *server) ListenAndServer(port string) error {
@@ -25,6 +31,7 @@ func (srv *server) ListenAndServer(port string) error {
 		fmt.Printf("Fail to listening, err: %v\n", err)
 		return err
 	}
+	srv.ln = ln
 	fmt.Printf("server listening on: %s\n", addr)
 	for {
 		conn, err := ln.Accept()
